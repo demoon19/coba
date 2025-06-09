@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dating/core/providers/auth_provider.dart';
 import 'package:dating/bottom_nav/screens/main_app_screen.dart'; // Halaman setelah register & login
 
@@ -36,18 +35,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (success) {
-        Fluttertoast.showToast(
-          msg: "Registration successful! You are now logged in.",
-        );
+        _showSnackBar("Registration successful! You are now logged in.");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainAppScreen()),
         );
       } else {
-        Fluttertoast.showToast(
-          msg: "Registration failed. Email might already be registered.",
-        );
+        _showSnackBar("Registration failed. Email might already be registered.");
       }
     }
+  }
+
+  void _showSnackBar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override

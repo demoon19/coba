@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dating/core/providers/auth_provider.dart';
 import 'package:dating/bottom_nav/screens/main_app_screen.dart'; // Halaman setelah login
 import 'package:dating/auth/screens/register_screen.dart'; // Halaman register
@@ -35,14 +34,22 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (success) {
-        Fluttertoast.showToast(msg: "Login successful!");
+        _showSnackBar("Login successful!");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainAppScreen()),
         );
       } else {
-        Fluttertoast.showToast(msg: "Login failed. Invalid credentials.");
+        _showSnackBar("Login failed. Invalid credentials.");
       }
     }
+  }
+
+  void _showSnackBar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override

@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:dating/api/services/currency_service.dart'; // Perhatikan 'dating', bukan 'dating'
-import 'package:dating/api/models/currency_model.dart'; // Perhatikan 'dating', bukan 'dating'
-import 'package:dating/data/repositories/user_repository.dart'; // Menggunakan repository
-import 'package:dating/core/providers/auth_provider.dart'; // Menggunakan provider
-import 'package:dating/core/providers/user_provider.dart'; // Menggunakan provider
-import 'package:dating/config/app_constants.dart'; // Menggunakan constants
-import 'package:dating/core/utils/app_utils.dart'; // Menggunakan utilitas
+import 'package:dating/api/services/currency_service.dart';
+import 'package:dating/api/models/currency_model.dart';
+import 'package:dating/data/repositories/user_repository.dart';
+import 'package:dating/core/providers/auth_provider.dart';
+import 'package:dating/core/providers/user_provider.dart';
+import 'package:dating/config/app_constants.dart';
 
 class CurrencyConverterViewModel extends ChangeNotifier {
-  // Hapus inisialisasi langsung karena akan diinjeksikan melalui konstruktor
   final CurrencyService _currencyService;
   final UserRepository _userRepository;
   final AuthProvider _authProvider;
-  final UserProvider? _userProvider; // Opsional
+  final UserProvider? _userProvider;
 
   CurrencyExchangeRate? _exchangeRates;
   bool _isLoading = false;
@@ -31,36 +29,28 @@ class CurrencyConverterViewModel extends ChangeNotifier {
   List<String> get availableCurrencies => AppConstants.supportedCurrencies;
   List<String> get availableTimezones => AppConstants.supportedTimezones;
 
-  // Konstruktor yang diperbarui untuk menerima dependensi
   CurrencyConverterViewModel(
     this._currencyService,
     this._userRepository,
     this._authProvider, {
-    UserProvider? userProvider, // Parameter bernama opsional
+    UserProvider? userProvider,
   }) : _userProvider = userProvider {
-    // Tambahkan listener untuk AuthProvider dan UserProvider
     _authProvider.addListener(_onAuthChanged);
-    _userProvider?.addListener(
-      _onUserBalanceChanged,
-    ); // Gunakan null-safe operator
-
-    // Panggil fetch rates awal
+    _userProvider?.addListener(_onUserBalanceChanged);
     fetchExchangeRates(_selectedBaseCurrency);
   }
 
-  // Listener untuk AuthProvider
   void _onAuthChanged() {
     if (_authProvider.isAuthenticated) {
       if (_authProvider.currentUserId != null) {
         fetchUserBalance(_authProvider.currentUserId!);
       }
     } else {
-      _userBalance = 0.0; // Clear balance on logout
+      _userBalance = 0.0;
       notifyListeners();
     }
   }
 
-  // Listener untuk UserProvider
   void _onUserBalanceChanged() {
     if (_userProvider?.currentUser != null) {
       _userBalance = _userProvider!.currentUser!.balance;
@@ -106,19 +96,19 @@ class CurrencyConverterViewModel extends ChangeNotifier {
   }
 
   double convertBalance(double amount, String targetCurrency) {
-    if (_exchangeRates == null ||
-        !_exchangeRates!.rates.containsKey(targetCurrency)) {
-      AppUtils.showToast('Exchange rates not available for $targetCurrency.');
+    final rate = _exchangeRates?.rates[targetCurrency];
+    if (rate == null) {
+      _errorMessage = 'Exchange rate not available for $targetCurrency.';
+      notifyListeners();
       return 0.0;
     }
 
     if (_selectedBaseCurrency == _exchangeRates!.baseCurrency) {
-      return amount * _exchangeRates!.rates[targetCurrency]!;
+      return amount * rate;
     } else {
-      // Implementasi konversi jika base API bukan mata uang dasar saldo
       final double amountInApiBase =
           amount / (_exchangeRates!.rates[_selectedBaseCurrency] ?? 1.0);
-      return amountInApiBase * _exchangeRates!.rates[targetCurrency]!;
+      return amountInApiBase * rate;
     }
   }
 
@@ -129,9 +119,7 @@ class CurrencyConverterViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _authProvider.removeListener(_onAuthChanged);
-    _userProvider?.removeListener(
-      _onUserBalanceChanged,
-    ); // Hapus listener dengan null-safe
+    _userProvider?.removeListener(_onUserBalanceChanged);
     super.dispose();
   }
 }

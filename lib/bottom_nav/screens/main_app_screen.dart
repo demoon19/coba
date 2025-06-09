@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dating/features/dashboard/screens/dashboard_screen.dart';
 import 'package:dating/features/profile/screens/profile_screen.dart';
 import 'package:dating/features/currency_converter/screens/currency_converter_screen.dart';
-import 'package:dating/features/notifications/screens/notification_screen.dart';
 import 'package:dating/features/search_filter/screens/search_filter_screen.dart';
 import 'package:dating/features/settings/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +21,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
     DashboardScreen(),
     SearchFilterScreen(),
     CurrencyConverterScreen(),
-    NotificationScreen(),
     ProfileScreen(),
     SettingsScreen(),
   ];

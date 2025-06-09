@@ -1,6 +1,5 @@
 import 'package:dating/routes/app_router.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:dating/features/dashboard/viewmodels/dashboard_viewmodel.dart';
 import 'package:dating/core/providers/auth_provider.dart';
@@ -28,7 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false); // Dapatkan AuthProvider di sini
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(title: const Text('Discover Matches')),
       body: Consumer<DashboardViewModel>(
@@ -51,16 +50,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 user: user,
                 onTap: () async {
                   if (authProvider.currentUserId != null) {
-                    bool deducted = await viewModel.deductBalanceForSwipe(authProvider.currentUserId!, 100.0); // Biaya per view
+                    bool deducted = await viewModel.deductBalanceForSwipe(authProvider.currentUserId!, 100.0);
                     if (deducted) {
-                      // Navigasi ke detail profil menggunakan AppRouter
                       Navigator.of(context).pushNamed(AppRouter.matchDetailRoute, arguments: user);
                     } else {
-                      Fluttertoast.showToast(msg: "Insufficient balance to view profile details.");
-                      // Tampilkan pesan saldo tidak cukup
+                      _showSnackBar(context, "Insufficient balance to view profile details.");
                     }
                   } else {
-                     Fluttertoast.showToast(msg: "You must be logged in to view profiles.");
+                    _showSnackBar(context, "You must be logged in to view profiles.");
                   }
                 },
               );
@@ -69,5 +66,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
     );
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message), duration: const Duration(seconds: 2));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dating/features/search_filter/viewmodels/search_filter_viewmodel.dart';
 import 'package:dating/features/dashboard/widgets/profile_card.dart';
 import 'package:dating/core/widgets/loading_indicator.dart';
-import 'package:dating/core/utils/app_utils.dart';
-import 'package:dating/core/providers/auth_provider.dart'; // Penting: Import AuthProvider
+import 'package:dating/core/providers/auth_provider.dart';
 
 class SearchFilterScreen extends StatefulWidget {
   const SearchFilterScreen({super.key});
@@ -20,8 +19,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Anda bisa memuat hasil awal di sini jika ingin, atau biarkan kosong hingga user mencari
-      // _performSearch(); // Bisa dipanggil di sini jika Anda ingin ada hasil default saat halaman dibuka
+      // Optional initial fetch
     });
   }
 
@@ -31,9 +29,11 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
       await Provider.of<SearchFilterViewModel>(
         context,
         listen: false,
-      ).performSearch(authProvider.currentUserId!); // <-- Berikan currentUserId
+      ).performSearch(authProvider.currentUserId!);
     } else {
-      AppUtils.showToast("Please log in to perform searches.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to perform searches.")),
+      );
     }
   }
 
@@ -67,7 +67,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _performSearch, // Panggil fungsi yang diperbaiki
+              onPressed: _performSearch,
               child: const Text('Apply Search & Filters'),
             ),
             const SizedBox(height: 16),
@@ -97,11 +97,12 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                       return ProfileCard(
                         user: user,
                         onTap: () {
-                          // Implementasi navigasi ke detail profil (jika diperlukan)
-                          // Anda mungkin ingin menambahkan biaya untuk melihat detail di sini juga
-                          // Navigator.of(context).pushNamed(AppRouter.matchDetailRoute, arguments: user);
-                          AppUtils.showToast(
-                            "Viewing detail for ${user.username}",
+                          // Anda bisa mengimplementasikan navigasi ke detail user
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text("Viewing detail for ${user.username}"),
+                            ),
                           );
                         },
                       );
