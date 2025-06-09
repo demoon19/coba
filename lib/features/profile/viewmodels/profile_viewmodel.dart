@@ -1,3 +1,4 @@
+import 'package:dating/data/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:dating/api/models/user_model.dart';
 import 'package:dating/api/services/user_service.dart';
@@ -10,6 +11,8 @@ class ProfileViewModel extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+
+  ProfileViewModel(UserRepository of);
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
