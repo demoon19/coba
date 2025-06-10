@@ -1,38 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dating/api/api_constants.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Removed Firebase import
+import 'package:dating/api/api_constants.dart'; // Still needed for collection names if you define them there
 import 'package:dating/api/models/match_model.dart';
 
 class MatchRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Simulate a local "matches" collection with an in-memory list of maps
+  static final List<Map<String, dynamic>> _localMatches = [];
+  static int _nextMatchId = 1; // For generating unique local match IDs
+
+  // A helper method to add matches for testing purposes
+  static void addLocalMatch(MatchModel match) {
+    _localMatches.add(match.toMap());
+  }
 
   Future<List<MatchModel>> getUserMatches(String userId) async {
     try {
-      final querySnapshot = await _firestore
-          .collection(ApiConstants.matchesCollection)
-          .where('userId1', isEqualTo: userId)
-          .where('userId2', isEqualTo: userId) // Ini tidak akan bekerja dengan OR
-          .get();
+      // Filter local matches where userId is either userId1 or userId2
+      final List<Map<String, dynamic>> rawMatches = _localMatches
+          .where((match) => match['userId1'] == userId || match['userId2'] == userId)
+          .toList();
 
-      // Perlu query yang lebih kompleks untuk mendapatkan matches di mana userId1 ATAU userId2 adalah userId
-      // Cara yang lebih baik adalah dengan 2 query dan menggabungkan hasilnya, atau membuat indeks komposit di Firestore
-      // Untuk demo, kita akan melakukan 2 query:
-      final matchesAsUser1 = await _firestore
-          .collection(ApiConstants.matchesCollection)
-          .where('userId1', isEqualTo: userId)
-          .get();
-
-      final matchesAsUser2 = await _firestore
-          .collection(ApiConstants.matchesCollection)
-          .where('userId2', isEqualTo: userId)
-          .get();
-
-      final allMatchesDocs = [...matchesAsUser1.docs, ...matchesAsUser2.docs];
-      final uniqueMatches = allMatchesDocs.map((doc) => MatchModel.fromDocumentSnapshot(doc)).toList();
-
-      // Hapus duplikat jika ada (jika match dibuat dua kali, atau jika logika Anda membuatnya begitu)
+      // Convert raw maps to MatchModel and filter duplicates
       final seenMatchIds = <String>{};
       final filteredUniqueMatches = <MatchModel>[];
-      for (var match in uniqueMatches) {
+      for (var matchMap in rawMatches) {
+        final match = MatchModel.fromMap(matchMap); // Use fromMap for local data
         if (!seenMatchIds.contains(match.id)) {
           filteredUniqueMatches.add(match);
           seenMatchIds.add(match.id);
@@ -40,7 +31,6 @@ class MatchRepository {
       }
 
       return filteredUniqueMatches;
-
     } catch (e) {
       print('Error getting user matches: $e');
       return [];
@@ -49,45 +39,49 @@ class MatchRepository {
 
   Future<void> markMatchAsSeen(String matchId, String currentUserId) async {
     try {
-      // Tandai match sebagai sudah dilihat oleh pengguna tertentu
-      final docRef = _firestore.collection(ApiConstants.matchesCollection).doc(matchId);
-      final matchDoc = await docRef.get();
-      if (matchDoc.exists) {
-        final data = matchDoc.data() as Map<String, dynamic>;
-        if (data['userId1'] == currentUserId) {
-          await docRef.update({'isSeenByUser1': true});
-        } else if (data['userId2'] == currentUserId) {
-          await docRef.update({'isSeenByUser2': true});
+      final matchIndex = _localMatches.indexWhere((match) => match['id'] == matchId);
+
+      if (matchIndex != -1) {
+        final matchData = _localMatches[matchIndex];
+        if (matchData['userId1'] == currentUserId) {
+          matchData['isSeenByUser1'] = true;
+        } else if (matchData['userId2'] == currentUserId) {
+          matchData['isSeenByUser2'] = true;
         }
+        // Update the list (no need to re-add, just modifying the map in place)
+        print('Marked match $matchId as seen by $currentUserId. Current status: ${matchData['isSeenByUser1']}, ${matchData['isSeenByUser2']}'); // For debugging
+      } else {
+        print('Match with ID $matchId not found.');
       }
     } catch (e) {
       print('Error marking match as seen: $e');
     }
   }
 
-  // Anda bisa menambahkan metode untuk membuat match baru jika logika match ada di frontend
-  // Namun, biasanya match dibuat di backend setelah ada like bersama
   Future<void> createMatch(String userId1, String userId2) async {
     try {
-      // Pastikan tidak ada match duplikat
-      final existingMatches = await _firestore.collection(ApiConstants.matchesCollection)
-          .where('userId1', isEqualTo: userId1)
-          .where('userId2', isEqualTo: userId2)
-          .get();
-      
-      final existingMatchesReversed = await _firestore.collection(ApiConstants.matchesCollection)
-          .where('userId1', isEqualTo: userId2)
-          .where('userId2', isEqualTo: userId1)
-          .get();
+      // Ensure no duplicate match regardless of order (userId1, userId2) or (userId2, userId1)
+      final bool alreadyExists = _localMatches.any((match) {
+        return (match['userId1'] == userId1 && match['userId2'] == userId2) ||
+               (match['userId1'] == userId2 && match['userId2'] == userId1);
+      });
 
-      if (existingMatches.docs.isEmpty && existingMatchesReversed.docs.isEmpty) {
-        await _firestore.collection(ApiConstants.matchesCollection).add({
+      if (!alreadyExists) {
+        final newMatchId = 'match_${_nextMatchId++}';
+        final newMatch = {
+          'id': newMatchId,
           'userId1': userId1,
           'userId2': userId2,
-          'matchedAt': FieldValue.serverTimestamp(),
+          'matchedAt': DateTime.now().toIso8601String(), // Store as ISO 8601 string
           'isSeenByUser1': false,
           'isSeenByUser2': false,
-        });
+          'lastMessage': null,
+          'lastMessageAt': null,
+        };
+        _localMatches.add(newMatch);
+        print('Created new match: $newMatch'); // For debugging
+      } else {
+        print('Match between $userId1 and $userId2 already exists.');
       }
     } catch (e) {
       print('Error creating match: $e');

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MatchModel {
   final String id;
   final String userId1; // ID pengguna pertama
@@ -21,29 +19,33 @@ class MatchModel {
     this.lastMessageAt,
   });
 
-  factory MatchModel.fromDocumentSnapshot(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  // Factory constructor for creating a MatchModel from a Map (e.g., from a local database or API)
+  factory MatchModel.fromMap(Map<String, dynamic> data) {
     return MatchModel(
-      id: doc.id,
+      id: data['id'] as String, // Assuming 'id' is present in your local data
       userId1: data['userId1'] as String,
       userId2: data['userId2'] as String,
-      matchedAt: (data['matchedAt'] as Timestamp).toDate(),
+      matchedAt: DateTime.parse(data['matchedAt'] as String), // Convert String to DateTime
       isSeenByUser1: data['isSeenByUser1'] ?? false,
       isSeenByUser2: data['isSeenByUser2'] ?? false,
       lastMessage: data['lastMessage'] as String?,
-      lastMessageAt: (data['lastMessageAt'] as Timestamp?)?.toDate(),
+      lastMessageAt: data['lastMessageAt'] != null 
+          ? DateTime.parse(data['lastMessageAt'] as String) 
+          : null, // Convert String to DateTime
     );
   }
 
+  // Convert MatchModel to a Map for storage (e.g., in a local database or sending to an API)
   Map<String, dynamic> toMap() {
     return {
+      'id': id, // Include id when converting to map for local storage
       'userId1': userId1,
       'userId2': userId2,
-      'matchedAt': Timestamp.fromDate(matchedAt),
+      'matchedAt': matchedAt.toIso8601String(), // Convert DateTime to String
       'isSeenByUser1': isSeenByUser1,
       'isSeenByUser2': isSeenByUser2,
       'lastMessage': lastMessage,
-      'lastMessageAt': lastMessageAt != null ? Timestamp.fromDate(lastMessageAt!) : null,
+      'lastMessageAt': lastMessageAt?.toIso8601String(), // Convert DateTime to String
     };
   }
 }

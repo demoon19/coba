@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dating/api/models/user_model.dart';
-// Jika ingin menampilkan peta kecil di sini
-// Jika ingin menampilkan peta kecil di sini
+import 'package:dating/api/models/user_model.dart'; // Ensure this is your local UserModel
+import 'dart:io'; // Required for FileImage if using local file paths
 
 class MatchDetailScreen extends StatelessWidget {
   final UserModel user;
@@ -16,16 +15,17 @@ class MatchDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar Profil (besar)
-            if (user.profileImageUrl != null &&
-                user.profileImageUrl!.isNotEmpty)
+            // Profile Image (large)
+            if (user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
-                      user.profileImageUrl!,
+                    child: Image( // Use Image widget for more flexibility
+                      image: user.profileImageUrl!.startsWith('http') || user.profileImageUrl!.startsWith('https')
+                          ? NetworkImage(user.profileImageUrl!) as ImageProvider<Object>
+                          : FileImage(File(user.profileImageUrl!)) as ImageProvider<Object>,
                       height: 300,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -73,7 +73,7 @@ class MatchDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Divider(),
                   const SizedBox(height: 16),
-                  // Informasi Lokasi
+                  // Location Information
                   Row(
                     children: [
                       const Icon(
@@ -83,25 +83,43 @@ class MatchDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        user.location != null
-                            ? 'Location: Lat ${user.location!.latitude.toStringAsFixed(4)}, Lng ${user.location!.longitude.toStringAsFixed(4)}'
+                        user.location != null &&
+                                user.location!['latitude'] != null &&
+                                user.location!['longitude'] != null
+                            ? 'Location: Lat ${user.location!['latitude']!.toStringAsFixed(4)}, Lng ${user.location!['longitude']!.toStringAsFixed(4)}'
                             : 'Location unknown',
                         style: const TextStyle(fontSize: 16),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Contoh: Jarak dari pengguna saat ini (memerlukan lokasi pengguna saat ini)
-                  // Jika Anda punya lokasi pengguna saat ini (misal dari AuthProvider atau dari MapService)
-                  // final currentLatLng = LatLng(currentLatitude, currentLongitude);
-                  // final matchLatLng = LatLng(user.location!.latitude, user.location!.longitude);
-                  // final distance = MapService().calculateDistance(
-                  //   GeoPoint(currentLatLng.latitude, currentLatLng.longitude),
-                  //   GeoPoint(matchLatLng.latitude, matchLatLng.longitude),
-                  // );
-                  // Text('Approx. ${distance.round() / 1000} km away', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  // Example: Distance from current user (requires current user's location)
+                  // You would typically get the current user's location from a provider
+                  // and then use LocationUtils.calculateDistance.
+                  // For example, if you have currentLatitude and currentLongitude:
+                  /*
+                  // Ensure you import LocationUtils and have current user's location
+                  // import 'package:dating/utils/location_utils.dart';
+                  // final Map<String, double> currentUserLocation = {'latitude': currentLatitude, 'longitude': currentLongitude};
+                  // if (user.location != null && currentUserLocation != null) {
+                  //   try {
+                  //     final double distanceMeters = LocationUtils.calculateDistance(
+                  //       currentUserLocation,
+                  //       user.location!,
+                  //     );
+                  //     Text(
+                  //       'Approx. ${LocationUtils.formatDistanceKm(distanceMeters)} away',
+                  //       style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  //     );
+                  //   } catch (e) {
+                  //     print('Error calculating distance: $e');
+                  //     // Handle error or display a default message
+                  //     Text('Distance: N/A', style: const TextStyle(fontSize: 16, color: Colors.grey));
+                  //   }
+                  // }
+                  */
 
-                  // Informasi Kontak (jika relevan, atau cara lain untuk berinteraksi)
+                  // Contact & Interests Information
                   const SizedBox(height: 16),
                   const Text(
                     'Contact & Interests',
@@ -110,17 +128,11 @@ class MatchDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text('Email: ${user.email}'),
 
-                  // Tambahkan minat, hobi, dll.
-                  // Misalnya:
-                  // Wrap(
-                  //   spacing: 8.0,
-                  //   children: user.interests.map((interest) => Chip(label: Text(interest))).toList(),
-                  // ),
                   const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // Implementasi chat atau interaksi lain
+                        // Implement chat or other interaction
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(

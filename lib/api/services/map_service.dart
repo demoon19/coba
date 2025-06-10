@@ -1,8 +1,11 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Untuk GeoPoint
 
-// Anda perlu mengimpor ini jika Anda benar-benar akan menampilkan peta interaktif
-// import 'package:Maps_flutter/Maps_flutter.dart';
+// No need for cloud_firestore import anymore
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Removed
+
+// If you plan to use a local map library, you might import it here.
+// For example:
+// import 'package:latlong2/latlong.dart'; // A popular package for geospatial calculations
 
 class MapService {
   Future<Position?> getCurrentLocation() async {
@@ -35,20 +38,27 @@ class MapService {
     return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
   }
 
-  double calculateDistance(GeoPoint start, GeoPoint end) {
+  // Changed GeoPoint to Map<String, double>
+  double calculateDistance(Map<String, double> start, Map<String, double> end) {
+    if (!start.containsKey('latitude') || !start.containsKey('longitude') ||
+        !end.containsKey('latitude') || !end.containsKey('longitude')) {
+      throw ArgumentError('Start and End maps must contain "latitude" and "longitude" keys.');
+    }
+
     return Geolocator.distanceBetween(
-      start.latitude,
-      start.longitude,
-      end.latitude,
-      end.longitude,
-    ); // Mengembalikan jarak dalam meter
+      start['latitude']!,
+      start['longitude']!,
+      end['latitude']!,
+      end['longitude']!,
+    ); // Returns distance in meters
   }
 
-  // Jika Anda ingin menampilkan peta Google Map, Anda bisa menambahkan metode seperti ini
-  // Future<GoogleMapController?> initializeMap(LatLng initialCameraPosition) async {
-  //   // Ini adalah tempat untuk inisialisasi GoogleMapController
-  //   // Namun, Anda perlu menambahkan widget GoogleMap di UI Anda
-  //   // dan mengelola lifecycle controller-nya.
+  // If you want to display a local map, you might add a method like this
+  // and import a local map widget library (e.g., flutter_map, Maps_flutter if not using Firebase)
+  // Future<dynamic?> initializeMap(Map<String, double> initialCameraPosition) async {
+  //   // This is where you would initialize a map controller for your chosen map library.
+  //   // You would also need to add the map widget to your UI.
+  //   // For example, if using Maps_flutter without Firebase, you'd manage its controller.
   //   return null; // Placeholder
   // }
 }

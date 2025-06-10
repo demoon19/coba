@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../errors/exceptions.dart'; // Import custom exceptions
 
 class LocationUtils {
@@ -7,6 +6,7 @@ class LocationUtils {
     bool serviceEnabled;
     LocationPermission permission;
 
+    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw NoInternetException(
@@ -40,12 +40,25 @@ class LocationUtils {
   }
 
   /// Calculates the distance between two geographical points in meters.
-  static double calculateDistance(GeoPoint start, GeoPoint end) {
+  // Changed GeoPoint to Map<String, double> for local use
+  static double calculateDistance(
+    Map<String, double> start,
+    Map<String, double> end,
+  ) {
+    if (!start.containsKey('latitude') ||
+        !start.containsKey('longitude') ||
+        !end.containsKey('latitude') ||
+        !end.containsKey('longitude')) {
+      throw ArgumentError(
+        'Start and End maps must contain "latitude" and "longitude" keys.',
+      );
+    }
+
     return Geolocator.distanceBetween(
-      start.latitude,
-      start.longitude,
-      end.latitude,
-      end.longitude,
+      start['latitude']!,
+      start['longitude']!,
+      end['latitude']!,
+      end['longitude']!,
     );
   }
 

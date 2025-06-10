@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dating/api/models/user_model.dart';
 import 'package:dating/data/repositories/user_repository.dart';
@@ -10,24 +9,24 @@ class UserProvider extends ChangeNotifier {
   String? _errorMessage;
 
   final UserRepository _userRepository;
-  final AuthProvider _authProvider; // Untuk mendengarkan perubahan autentikasi
+  final AuthProvider _authProvider; // For listening to authentication changes
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   UserProvider(this._userRepository, this._authProvider) {
-    // Langsung muat user saat provider diinisialisasi
+    // Immediately load user when provider is initialized
     _loadCurrentUser();
-    // Dengarkan perubahan status autentikasi
+    // Listen to authentication status changes
     _authProvider.addListener(_onAuthChanged);
   }
 
   void _onAuthChanged() {
     if (_authProvider.isAuthenticated) {
-      _loadCurrentUser(); // Muat ulang user jika login
+      _loadCurrentUser(); // Reload user if logged in
     } else {
-      _currentUser = null; // Kosongkan user jika logout
+      _currentUser = null; // Clear user if logged out
       notifyListeners();
     }
   }
@@ -44,6 +43,8 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Assuming _userRepository.getCurrentUser() now returns UserModel
+      // based on local storage (e.g., from SessionManager)
       _currentUser = await _userRepository.getCurrentUser();
     } catch (e) {
       _errorMessage = 'Failed to load user data: $e';
@@ -53,18 +54,27 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // Metode untuk memperbarui saldo dari luar
+  // Method to update balance from external sources
   Future<void> updateBalanceInProvider(double amount) async {
     if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(balance: _currentUser!.balance + amount);
+      // Create a new UserModel instance with updated balance
+      _currentUser = _currentUser!.copyWith(
+        balance: _currentUser!.balance + amount,
+      );
       notifyListeners();
-      // Anda juga harus memastikan ini diperbarui di Firestore
-      // _userRepository.updateBalance(_currentUser!.id, amount); // Panggil ini jika perubahan terjadi di sini
+      // You should also ensure this is updated in your local storage
+      // For instance, by calling a method in _userRepository if applicable
+      // await _userRepository.updateBalance(_currentUser!.id, amount);
     }
   }
 
-  // Metode untuk memperbarui profil di provider setelah update dari UI
-  void updateCurrentUserProfile({String? username, String? bio, String? profileImageUrl, GeoPoint? location}) {
+  // Method to update profile in the provider after UI update
+  void updateCurrentUserProfile({
+    String? username,
+    String? bio,
+    String? profileImageUrl,
+    Map<String, double>? location,
+  }) {
     if (_currentUser != null) {
       _currentUser = UserModel(
         id: _currentUser!.id,
@@ -72,7 +82,8 @@ class UserProvider extends ChangeNotifier {
         email: _currentUser!.email,
         profileImageUrl: profileImageUrl ?? _currentUser!.profileImageUrl,
         bio: bio ?? _currentUser!.bio,
-        location: location ?? _currentUser!.location,
+        location:
+            location ?? _currentUser!.location, // Now Map<String, double>?
         balance: _currentUser!.balance,
         createdAt: _currentUser!.createdAt,
       );
@@ -87,7 +98,7 @@ class UserProvider extends ChangeNotifier {
   }
 }
 
-// Tambahkan copyWith method di UserModel untuk mempermudah update
+// Add copyWith method in UserModel extension for easy updates
 extension UserModelCopyWith on UserModel {
   UserModel copyWith({
     String? id,
@@ -95,7 +106,8 @@ extension UserModelCopyWith on UserModel {
     String? email,
     String? profileImageUrl,
     String? bio,
-    GeoPoint? location,
+    Map<String, double>?
+    location, // Changed from GeoPoint to Map<String, double>?
     double? balance,
     DateTime? createdAt,
   }) {

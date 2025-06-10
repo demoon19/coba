@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dating/api/models/user_model.dart';
+import 'package:dating/api/models/user_model.dart'; // Ensure this is your local UserModel
 
 class ProfileCard extends StatelessWidget {
   final UserModel user;
@@ -58,14 +58,16 @@ class ProfileCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.location_on, size: 18, color: Colors.grey),
                   const SizedBox(width: 4),
-                  // Anda bisa menampilkan jarak di sini menggunakan geolocator
-                  // Contoh: Text('5 km away')
+                  // Display location from the Map<String, double>
                   Text(
-                    'Location: ${user.location?.latitude.toStringAsFixed(2)}, ${user.location?.longitude.toStringAsFixed(2)}',
+                    // Safely access latitude and longitude from the map
+                    user.location != null
+                        ? 'Location: ${user.location!['latitude']?.toStringAsFixed(2)}, ${user.location!['longitude']?.toStringAsFixed(2)}'
+                        : 'Location: Not available',
                   ),
                 ],
               ),
-              // Tambahkan info lain seperti minat, usia, dll.
+              // Add other info like interests, age, etc.
             ],
           ),
         ),

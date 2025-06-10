@@ -30,13 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Firebase/Google Cloud
-  firebase_core: ^2.24.2 # Wajib untuk Firebase
-  cloud_firestore: ^4.13.6
-  firebase_auth: ^4.15.4 # Opsional, jika Anda ingin menggunakan Firebase Auth
-  firebase_storage: ^11.5.6 # Untuk menyimpan gambar profil
-  firebase_messaging: ^14.7.15 # Untuk notifikasi push
 
   # State Management (Contoh: Provider)
   provider: ^6.1.1

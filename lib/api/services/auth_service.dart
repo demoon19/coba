@@ -1,13 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart'; // Untuk enkripsi password (contoh)
-import 'dart:convert'; // Untuk utf8.encode
+import 'package:crypto/crypto.dart'; // For password encryption
+import 'dart:convert'; // For utf8.encode
 
 class AuthService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Simulate a local "users" collection with an in-memory list of maps
+  static final List<Map<String, dynamic>> _localUsers = [];
+  static int _nextUserId = 1; // For generating unique local user IDs
 
-  // Fungsi untuk mengenkripsi password sederhana (hanya contoh, gunakan metode yang lebih kuat di produksi)
+  // Function to hash passwords (same as before)
   String _hashPassword(String password) {
-    var bytes = utf8.encode(password); // data being hashed
+    var bytes = utf8.encode(password);
     var digest = sha256.convert(bytes);
     return digest.toString();
   }
@@ -16,23 +17,27 @@ class AuthService {
     try {
       final hashedPassword = _hashPassword(password);
 
-      // Cek apakah email sudah terdaftar
-      final querySnapshot = await _firestore.collection('users').where('email', isEqualTo: email).get();
-      if (querySnapshot.docs.isNotEmpty) {
+      // Check if email is already registered in local storage
+      if (_localUsers.any((user) => user['email'] == email)) {
         return {'success': false, 'message': 'Email already registered.'};
       }
 
-      // Simpan data pengguna ke Firestore
-      await _firestore.collection('users').add({
+      // Prepare new user data for local storage
+      final newUser = {
+        'id': 'user_${_nextUserId++}', // Generate a simple unique ID
         'username': username,
         'email': email,
-        'passwordHash': hashedPassword, // Simpan hash password
-        'createdAt': FieldValue.serverTimestamp(),
-        'balance': 50000.0, // Saldo awal
-        'profileImageUrl': '', // Placeholder
+        'passwordHash': hashedPassword,
+        'createdAt': DateTime.now().toIso8601String(), // Store as ISO 8601 string
+        'balance': 50000.0,
+        'profileImageUrl': '',
         'bio': '',
-        'location': const GeoPoint(0, 0), // Placeholder lokasi
-      });
+        'location': {'latitude': 0.0, 'longitude': 0.0}, // Store location as a Map
+      };
+
+      _localUsers.add(newUser); // Add the new user to our local "database"
+
+      print('Registered User: $newUser'); // For debugging
       return {'success': true, 'message': 'Registration successful!'};
     } catch (e) {
       print('Error registering user: $e');
@@ -44,19 +49,17 @@ class AuthService {
     try {
       final hashedPassword = _hashPassword(password);
 
-      // Cari pengguna berdasarkan email dan password hash
-      final querySnapshot = await _firestore.collection('users')
-          .where('email', isEqualTo: email)
-          .where('passwordHash', isEqualTo: hashedPassword)
-          .get();
+      // Find user by email and password hash in local storage
+      final user = _localUsers.firstWhere(
+        (user) => user['email'] == email && user['passwordHash'] == hashedPassword,
+        orElse: () => {}, // Return an empty map if no user is found
+      );
 
-      if (querySnapshot.docs.isNotEmpty) {
-        final userData = querySnapshot.docs.first.data();
-        final userId = querySnapshot.docs.first.id;
-        // Simpan sesi (misal: userId) ke penyimpanan lokal
-        // Nanti kita akan gunakan SessionManager
-        return {'success': true, 'message': 'Login successful!', 'userId': userId, 'userData': userData};
+      if (user.isNotEmpty) {
+        // User found, return success and user data
+        return {'success': true, 'message': 'Login successful!', 'userId': user['id'], 'userData': user};
       } else {
+        // No matching user
         return {'success': false, 'message': 'Invalid email or password.'};
       }
     } catch (e) {
